@@ -2,15 +2,17 @@ import os
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "3, 1, 2"
 
-#seed_numbers = [42, 593, 1774, 65336, 189990]
+# seed_numbers = [42, 593, 1774, 65336, 189990]
 seed_numbers = [42]
-model_type = 'bert'
-absa_type = 'linear'
-tfm_mode = 'finetune'
-fix_tfm = 0
-task_name = 'laptop14'
-warmup_steps = 0
-overfit = 0
+model_type = 'bert'  # pre-trained model
+absa_type = 'linear'  # layer (linear, gru, tfm, crf)
+tfm_mode = 'finetune'  # tranformer (finetune)
+fix_tfm = 0  # 0 -> finetune all parameters | 1 -> freeze all parameters
+task_name = 'rest14'  # dataset
+warmup_steps = 0  # warmpup = 1 -> increase gradually, otherwise -> set learning rate = first
+overfit = 0  # overfit checking -> check ìf model is overft or not
+
+# batch size
 if task_name == 'laptop14':
     train_batch_size = 32
 elif task_name == 'rest_total' or task_name == 'rest14' or task_name == 'rest15' or task_name == 'rest16':
@@ -25,7 +27,8 @@ for run_id, seed in enumerate(seed_numbers):
               "--max_steps 1500 --warmup_steps %s --do_train --do_eval --do_lower_case " \
               "--seed %s --tagging_schema BIEOS --overfit %s " \
               "--overwrite_output_dir --eval_all_checkpoints --MASTER_ADDR localhost --MASTER_PORT 28512" % (
-        model_type, absa_type, tfm_mode, fix_tfm, task_name, task_name, train_batch_size, warmup_steps, seed, overfit)
+                  model_type, absa_type, tfm_mode, fix_tfm, task_name, task_name, train_batch_size, warmup_steps, seed,
+                  overfit)
     output_dir = '%s-%s-%s-%s' % (model_type, absa_type, task_name, tfm_mode)
     if fix_tfm:
         output_dir = '%s-fix' % output_dir
