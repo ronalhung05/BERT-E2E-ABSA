@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
-from transformers import BertModel, XLNetModel
+from transformers import BertModel
 from seq_utils import *
-from bert import BertPreTrainedModel, XLNetPreTrainedModel
+from bert import BertPreTrainedModel
 from torch.nn import CrossEntropyLoss
 
 

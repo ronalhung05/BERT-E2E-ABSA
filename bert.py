@@ -17,8 +17,6 @@
 from transformers import PreTrainedModel, BertModel, BertConfig, XLNetModel, XLNetConfig
 # model map for BERT
 from transformers import BERT_PRETRAINED_CONFIG_ARCHIVE_MAP
-# model map for XLNet
-from transformers.models.bert.modeling_bert import BertEncoder, BertEmbeddings, BertPooler
 import torch.nn as nn
 from bert_utils import *
 
