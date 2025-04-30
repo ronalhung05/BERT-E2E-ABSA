@@ -42,6 +42,14 @@ class BertABSATagger(BertPreTrainedModel):
             penultimate_hidden_size = bert_config.hidden_size
         else:
             self.tagger_dropout = nn.Dropout(self.tagger_config.hidden_dropout_prob)
+            if self.tagger_config.absa_type == 'tfm':
+                # transformer encoder layer
+                self.tagger = nn.TransformerEncoderLayer(d_model=bert_config.hidden_size,
+                                                         nhead=12,
+                                                         dim_feedforward=4*bert_config.hidden_size,
+                                                         dropout=0.1)
+            else:
+                raise Exception('Unimplemented downstream tagger %s...' % self.tagger_config.absa_type)
             penultimate_hidden_size = self.tagger_config.hidden_size
         self.classifier = nn.Linear(penultimate_hidden_size, bert_config.num_labels)
 
@@ -56,6 +64,16 @@ class BertABSATagger(BertPreTrainedModel):
         if self.tagger is None or self.tagger_config.absa_type == 'crf':
             # regard classifier as the tagger
             logits = self.classifier(tagger_input)
+        else:
+            if self.tagger_config.absa_type == 'san' or self.tagger_config.absa_type == 'tfm':
+                # vanilla self-attention networks or transformer
+                # adapt the input format for the transformer or self attention networks
+                tagger_input = tagger_input.transpose(0, 1)
+                classifier_input = self.tagger(tagger_input)
+                classifier_input = classifier_input.transpose(0, 1)
+            else:
+                raise Exception("Unimplemented downstream tagger %s..." % self.tagger_config.absa_type)
+            classifier_input = self.tagger_dropout(classifier_input)
         outputs = (logits,) + outputs[2:]
 
         if labels is not None:
