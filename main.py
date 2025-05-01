@@ -9,7 +9,7 @@ from glue_utils import convert_examples_to_seq_features, output_modes, processor
 from tqdm import tqdm, trange
 from transformers import BertConfig, BertTokenizer, WEIGHTS_NAME
 from transformers import AdamW, get_linear_schedule_with_warmup
-from absa_layer import BertABSATagge
+from absa_layer import BertABSATagger
 from torch.utils.data import DataLoader, TensorDataset, RandomSampler, SequentialSampler
 from torch.utils.data.distributed import DistributedSampler
 import torch.distributed as dist
