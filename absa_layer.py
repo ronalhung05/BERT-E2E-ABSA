@@ -1,3 +1,4 @@
+# Build downstream task based on bert.py
 import torch
 import torch.nn as nn
 from transformers import BertModel
@@ -5,11 +6,11 @@ from seq_utils import *
 from bert import BertPreTrainedModel
 from torch.nn import CrossEntropyLoss
 
-
 class TaggerConfig:
+    # define hyper parameters
     def __init__(self):
-        self.hidden_dropout_prob = 0.1
-        self.hidden_size = 768
+        self.hidden_dropout_prob = 0.1 # drop out = 0.1
+        self.hidden_size = 768 # size
         self.n_rnn_layers = 1  # not used if tagger is non-RNN model
         self.bidirectional = True  # not used if tagger is non-RNN model
 
@@ -18,7 +19,6 @@ class GRU(nn.Module):
     # customized GRU with layer normalization
     def __init__(self, input_size, hidden_size, bidirectional=True):
         """
-
         :param input_size:
         :param hidden_size:
         :param bidirectional:
@@ -41,13 +41,11 @@ class GRU(nn.Module):
 
     def forward(self, x):
         """
-
         :param x: input tensor, shape: (batch_size, seq_len, input_size)
         :return:
         """
         def recurrence(xt, htm1):
             """
-
             :param xt: current input
             :param htm1: previous hidden state
             :return:
@@ -91,7 +89,7 @@ class BertABSATagger(BertPreTrainedModel):
         :param bert_config: configuration for bert model
         """
         super(BertABSATagger, self).__init__(bert_config)
-        self.num_labels = bert_config.num_labels
+        self.num_labels = bert_config.num_labels # number of labels
         self.tagger_config = TaggerConfig()
         self.tagger_config.absa_type = bert_config.absa_type.lower()
         if bert_config.tfm_mode == 'finetune':

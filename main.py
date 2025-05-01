@@ -46,7 +46,7 @@ def init_args():
     parser.add_argument("--model_type", default=None, type=str, required=True,
                         help="Model type selected in the list: " + ", ".join(MODEL_CLASSES.keys()))
     parser.add_argument("--absa_type", default=None, type=str, required=True,
-                        help="Downstream absa layer type selected in the list: [linear, gru, san, tfm, crf]")
+                        help="Downstream absa layer type selected in the list: [linear, gru, tfm]")
     parser.add_argument("--tfm_mode", default=None, type=str, required=True,
                         help="mode of the pre-trained transformer, selected from: [finetune]")
     parser.add_argument("--fix_tfm", default=None, type=int, required=True,

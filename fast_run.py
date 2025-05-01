@@ -13,7 +13,7 @@ warmup_steps = 0
 overfit = 0
 if task_name == 'laptop14':
     train_batch_size = 32
-elif task_name == 'rest_total' or task_name == 'rest14' or task_name == 'rest15' or task_name == 'rest16':
+elif task_name == 'rest14':
     train_batch_size = 16
 else:
     raise Exception("Unsupported dataset %s!!!" % task_name)

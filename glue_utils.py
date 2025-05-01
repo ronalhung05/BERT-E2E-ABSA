@@ -1,18 +1,4 @@
-# coding=utf-8
-# Copyright 2018 The Google AI Language Team Authors and The HuggingFace Inc. team.
-# Copyright (c) 2018, NVIDIA CORPORATION.  All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Preprocess input, convert data, evaluation for sequence labeling with BERT
 """ BERT classification fine-tuning: utilities to work with GLUE tasks """
 
 from __future__ import absolute_import, division, print_function
@@ -70,7 +56,7 @@ class SeqInputFeatures(object):
         # mapping between word index and head token index
         self.evaluate_label_ids = evaluate_label_ids
 
-
+# Parent Class
 class DataProcessor(object):
     """Base class for data converters for sequence classification data sets."""
 
@@ -102,7 +88,7 @@ class DataProcessor(object):
                 lines.append(line)
             return lines
 
-
+# Derived class
 class ABSAProcessor(DataProcessor):
     """Processor for the ABSA datasets"""
     def get_train_examples(self, data_dir, tagging_schema):
@@ -188,7 +174,7 @@ def _truncate_seq_pair(tokens_a, tokens_b, max_length):
         else:
             tokens_b.pop()
 
-
+# sequence labeling
 def convert_examples_to_seq_features(examples, label_list, tokenizer,
                                      cls_token_at_end=False, pad_on_left=False, cls_token='[CLS]',
                                      sep_token='[SEP]', pad_token=0, sequence_a_segment_id=0,
@@ -295,7 +281,7 @@ def convert_examples_to_seq_features(examples, label_list, tokenizer,
     print("maximal sequence length is", max_seq_length)
     return features
 
-
+# normal classification
 def convert_examples_to_features(examples, label_list, max_seq_length,
                                  tokenizer, output_mode,
                                  cls_token_at_end=False, pad_on_left=False,
@@ -408,7 +394,7 @@ def convert_examples_to_features(examples, label_list, max_seq_length,
                               label_id=label_id))
     return features
 
-
+# eval
 def match_ts(gold_ts_sequence, pred_ts_sequence):
     """
     calculate the number of correctly predicted targeted sentiment
@@ -516,28 +502,10 @@ def compute_metrics_absa(preds, labels, all_evaluate_label_ids, tagging_schema):
 
 processors = {
     "laptop14": ABSAProcessor,
-    "rest_total": ABSAProcessor,
-    "rest_total_revised": ABSAProcessor,
-    "rest14": ABSAProcessor,
-    "rest15": ABSAProcessor,
-    "rest16": ABSAProcessor,
+    "rest14": ABSAProcessor
 }
 
 output_modes = {
-    "cola": "classification",
-    "mnli": "classification",
-    "mnli-mm": "classification",
-    "mrpc": "classification",
-    "sst-2": "classification",
-    "sts-b": "regression",
-    "qqp": "classification",
-    "qnli": "classification",
-    "rte": "classification",
-    "wnli": "classification",
     "laptop14": "classification",
-    "rest_total": "classification",
-    "rest14": "classification",
-    "rest15": "classification",
-    "rest16": "classification",
-    "rest_total_revised": "classification",
+    "rest14": "classification"
 }
