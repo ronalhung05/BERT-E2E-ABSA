@@ -19,6 +19,7 @@ import logging
 import os
 logger = logging.getLogger(__name__)
 
+
 def load_tf_weights_in_bert(model, config, tf_checkpoint_path):
     """ Load tf checkpoints in a pytorch model.
     """

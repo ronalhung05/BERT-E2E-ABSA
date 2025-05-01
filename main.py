@@ -9,8 +9,7 @@ from glue_utils import convert_examples_to_seq_features, output_modes, processor
 from tqdm import tqdm, trange
 from transformers import BertConfig, BertTokenizer, WEIGHTS_NAME
 from transformers import AdamW, get_linear_schedule_with_warmup
-from absa_layer import BertABSATagger
-
+from absa_layer import BertABSATagge
 from torch.utils.data import DataLoader, TensorDataset, RandomSampler, SequentialSampler
 from torch.utils.data.distributed import DistributedSampler
 import torch.distributed as dist
@@ -21,9 +20,8 @@ import json
 
 logger = logging.getLogger(__name__)
 
-#ALL_MODELS = sum((tuple(conf.pretrained_config_archive_map.keys()) for conf in (BertConfig, XLNetConfig)), ())
 ALL_MODELS = (
-     'bert-base-uncased',
+ 'bert-base-uncased',
  'bert-base-cased'
 )
 
@@ -184,7 +182,7 @@ def train(args, train_dataset, model, tokenizer):
             batch = tuple(t.to(args.device) for t in batch)
             inputs = {'input_ids':      batch[0],
                       'attention_mask': batch[1],
-                      'token_type_ids': batch[2] if args.model_type in ['bert', 'xlnet'] else None,  # XLM don't use segment_ids
+                      'token_type_ids': batch[2] if args.model_type in ['bert'] else None,  # XLM don't use segment_ids
                       'labels':         batch[3]}
             ouputs = model(**inputs)
             # loss with attention mask
@@ -270,7 +268,7 @@ def evaluate(args, model, tokenizer, mode, prefix=""):
             with torch.no_grad():
                 inputs = {'input_ids':      batch[0],
                           'attention_mask': batch[1],
-                          'token_type_ids': batch[2] if args.model_type in ['bert', 'xlnet'] else None,  # XLM don't use segment_ids
+                          'token_type_ids': batch[2] if args.model_type in ['bert'] else None,  # XLM don't use segment_ids
                           'labels':         batch[3]}
                 outputs = model(**inputs)
                 # logits: (bsz, seq_len, label_size)
@@ -336,12 +334,12 @@ def load_and_cache_examples(args, task, tokenizer, mode='train'):
         else:
             raise Exception("Invalid data mode %s..." % mode)
         features = convert_examples_to_seq_features(examples=examples, label_list=label_list, tokenizer=tokenizer,
-                                                    cls_token_at_end=bool(args.model_type in ['xlnet']),
+                                                    cls_token_at_end=False,
                                                     cls_token=tokenizer.cls_token,
                                                     sep_token=tokenizer.sep_token,
-                                                    cls_token_segment_id=2 if args.model_type in ['xlnet'] else 0,
-                                                    pad_on_left=bool(args.model_type in ['xlnet']),
-                                                    pad_token_segment_id=4 if args.model_type in ['xlnet'] else 0)
+                                                    cls_token_segment_id=0,
+                                                    pad_on_left=False,
+                                                    pad_token_segment_id=0)
         if args.local_rank in [-1, 0]:
             #logger.info("Saving features into cached file %s", cached_features_file)
             torch.save(features, cached_features_file)

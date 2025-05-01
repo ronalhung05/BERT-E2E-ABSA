@@ -515,9 +515,29 @@ def compute_metrics_absa(preds, labels, all_evaluate_label_ids, tagging_schema):
 
 
 processors = {
-    "rest14": ABSAProcessor
+    "laptop14": ABSAProcessor,
+    "rest_total": ABSAProcessor,
+    "rest_total_revised": ABSAProcessor,
+    "rest14": ABSAProcessor,
+    "rest15": ABSAProcessor,
+    "rest16": ABSAProcessor,
 }
 
 output_modes = {
-    "rest14": "classification"
+    "cola": "classification",
+    "mnli": "classification",
+    "mnli-mm": "classification",
+    "mrpc": "classification",
+    "sst-2": "classification",
+    "sts-b": "regression",
+    "qqp": "classification",
+    "qnli": "classification",
+    "rte": "classification",
+    "wnli": "classification",
+    "laptop14": "classification",
+    "rest_total": "classification",
+    "rest14": "classification",
+    "rest15": "classification",
+    "rest16": "classification",
+    "rest_total_revised": "classification",
 }

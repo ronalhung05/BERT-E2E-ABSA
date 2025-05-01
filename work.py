@@ -10,8 +10,9 @@ from absa_layer import BertABSATagger
 from torch.utils.data import DataLoader, TensorDataset, SequentialSampler
 from seq_utils import ot2bieos_ts, bio2ot_ts, tag2ts
 
+#ALL_MODELS = sum((tuple(conf.pretrained_config_archive_map.keys()) for conf in (BertConfig, XLNetConfig)), ())
 ALL_MODELS = (
-     'bert-base-uncased',
+ 'bert-base-uncased',
  'bert-base-cased',
 )
 
@@ -39,12 +40,12 @@ def load_and_cache_examples(args, task, tokenizer):
         label_list = processor.get_labels(args.tagging_schema)
         examples = processor.get_test_examples(args.data_dir, args.tagging_schema)
         features = convert_examples_to_seq_features(examples=examples, label_list=label_list, tokenizer=tokenizer,
-                                                    cls_token_at_end=bool(args.model_type in ['xlnet']),
+                                                    cls_token_at_end=False,
                                                     cls_token=tokenizer.cls_token,
                                                     sep_token=tokenizer.sep_token,
-                                                    cls_token_segment_id=2 if args.model_type in ['xlnet'] else 0,
-                                                    pad_on_left=bool(args.model_type in ['xlnet']),
-                                                    pad_token_segment_id=4 if args.model_type in ['xlnet'] else 0)
+                                                    cls_token_segment_id=0,
+                                                    pad_on_left=False,
+                                                    pad_token_segment_id=0)
         torch.save(features, cached_features_file)
     total_words = []
     for input_example in examples:
@@ -138,7 +139,7 @@ def predict(args, model, tokenizer):
         with torch.no_grad():
             inputs = {'input_ids': batch[0],
                       'attention_mask': batch[1],
-                      'token_type_ids': batch[2] if args.model_type in ['bert', 'xlnet'] else None,
+                      'token_type_ids': batch[2] if args.model_type in ['bert'] else None,
                       # XLM don't use segment_ids
                       'labels': batch[3]}
             outputs = model(**inputs)
