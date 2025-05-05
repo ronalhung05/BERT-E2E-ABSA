@@ -25,11 +25,9 @@ ALL_MODELS = (
  'bert-base-cased'
 )
 
-
 MODEL_CLASSES = {
     'bert': (BertConfig, BertABSATagger, BertTokenizer)
 }
-
 
 def set_seed(args):
     random.seed(args.seed)
@@ -37,7 +35,6 @@ def set_seed(args):
     torch.manual_seed(args.seed)
     if args.n_gpu > 0:
         torch.cuda.manual_seed_all(args.seed)
-
 
 def init_args():
     parser = argparse.ArgumentParser()
@@ -260,7 +257,6 @@ def evaluate(args, model, tokenizer, mode, prefix=""):
         nb_eval_steps = 0
         preds = None
         out_label_ids = None
-        crf_logits, crf_mask = [], []
         for batch in tqdm(eval_dataloader, desc="Evaluating"):
             model.eval()
             batch = tuple(t.to(args.device) for t in batch)
@@ -268,16 +264,13 @@ def evaluate(args, model, tokenizer, mode, prefix=""):
             with torch.no_grad():
                 inputs = {'input_ids':      batch[0],
                           'attention_mask': batch[1],
-                          'token_type_ids': batch[2] if args.model_type in ['bert'] else None,  # XLM don't use segment_ids
+                          'token_type_ids': batch[2] if args.model_type in ['bert'] else None,
                           'labels':         batch[3]}
                 outputs = model(**inputs)
                 # logits: (bsz, seq_len, label_size)
                 # here the loss is the masked loss
                 tmp_eval_loss, logits = outputs[:2]
                 eval_loss += tmp_eval_loss.mean().item()
-
-                crf_logits.append(logits)
-                crf_mask.append(batch[1])
             nb_eval_steps += 1
             if preds is None:
                 preds = logits.detach().cpu().numpy()
@@ -287,14 +280,7 @@ def evaluate(args, model, tokenizer, mode, prefix=""):
                 out_label_ids = np.append(out_label_ids, inputs['labels'].detach().cpu().numpy(), axis=0)
         eval_loss = eval_loss / nb_eval_steps
         # argmax operation over the last dimension
-        if model.tagger_config.absa_type != 'crf':
-            # greedy decoding
-            preds = np.argmax(preds, axis=-1)
-        else:
-            # viterbi decoding for CRF-based model
-            crf_logits = torch.cat(crf_logits, dim=0)
-            crf_mask = torch.cat(crf_mask, dim=0)
-            preds = model.tagger.viterbi_tags(logits=crf_logits, mask=crf_mask)
+        preds = np.argmax(preds, axis=-1)
         result = compute_metrics_absa(preds, out_label_ids, eval_evaluate_label_ids, args.tagging_schema)
         result['eval_loss'] = eval_loss
         results.update(result)
@@ -309,7 +295,6 @@ def evaluate(args, model, tokenizer, mode, prefix=""):
             #logger.info("***** %s results *****" % mode)
 
     return results
-
 
 def load_and_cache_examples(args, task, tokenizer, mode='train'):
     processor = processors[task]()

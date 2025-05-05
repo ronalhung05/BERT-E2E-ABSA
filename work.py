@@ -146,11 +146,7 @@ def predict(args, model, tokenizer):
             # logits: (1, seq_len, label_size)
             logits = outputs[1]
             # preds: (1, seq_len)
-            if model.tagger_config.absa_type != 'crf':
-                preds = np.argmax(logits.detach().cpu().numpy(), axis=-1)
-            else:
-                mask = batch[1]
-                preds = model.tagger.viterbi_tags(logits=logits, mask=mask)
+            preds = np.argmax(logits.detach().cpu().numpy(), axis=-1)
             label_indices = evaluate_label_ids[idx]
             words = total_words[idx]
             pred_labels = preds[0][label_indices]

@@ -134,7 +134,7 @@ class BertABSATagger(BertPreTrainedModel):
         tagger_input = outputs[0]
         tagger_input = self.bert_dropout(tagger_input)
         #print("tagger_input.shape:", tagger_input.shape)
-        if self.tagger is None or self.tagger_config.absa_type == 'crf':
+        if self.tagger is None:
             # regard classifier as the tagger
             logits = self.classifier(tagger_input)
         else:
@@ -154,18 +154,13 @@ class BertABSATagger(BertPreTrainedModel):
         outputs = (logits,) + outputs[2:]
 
         if labels is not None:
-            if self.tagger_config.absa_type != 'crf':
-                loss_fct = CrossEntropyLoss()
-                if attention_mask is not None:
-                    active_loss = attention_mask.view(-1) == 1
-                    active_logits = logits.view(-1, self.num_labels)[active_loss]
-                    active_labels = labels.view(-1)[active_loss]
-                    loss = loss_fct(active_logits, active_labels)
-                else:
-                    loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-                outputs = (loss,) + outputs
+            loss_fct = CrossEntropyLoss()
+            if attention_mask is not None:
+                active_loss = attention_mask.view(-1) == 1
+                active_logits = logits.view(-1, self.num_labels)[active_loss]
+                active_labels = labels.view(-1)[active_loss]
+                loss = loss_fct(active_logits, active_labels)
             else:
-                log_likelihood = self.tagger(inputs=logits, tags=labels, mask=attention_mask)
-                loss = -log_likelihood
-                outputs = (loss,) + outputs
+                loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
+            outputs = (loss,) + outputs
         return outputs
