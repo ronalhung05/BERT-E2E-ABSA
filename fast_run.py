@@ -6,11 +6,11 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0, 1"
 seed_numbers = [42]
 model_type = 'bert'
 absa_type = 'tfm'
-tfm_mode = 'finetune'
+tfm_mode = 'finetune' #only support finetune
 fix_tfm = 1
 task_name = 'rest14'
-warmup_steps = 0
-overfit = 0
+warmup_steps = 0 # no warmup
+overfit = 0 # no overfit check
 if task_name == 'laptop14':
     train_batch_size = 32
 elif task_name == 'rest14':
@@ -24,7 +24,7 @@ for run_id, seed in enumerate(seed_numbers):
               "--per_gpu_train_batch_size %s --per_gpu_eval_batch_size 8 --learning_rate 2e-5 " \
               "--max_steps 1500 --warmup_steps %s --do_train --do_eval --do_lower_case " \
               "--seed %s --tagging_schema BIEOS --overfit %s " \
-              "--overwrite_output_dir --eval_all_checkpoints --MASTER_ADDR localhost --MASTER_PORT 28512" % (
+              "--overwrite_output_dir --eval_all_checkpoints" % (
         model_type, absa_type, tfm_mode, fix_tfm, task_name, task_name, train_batch_size, warmup_steps, seed, overfit)
     output_dir = '%s-%s-%s-%s' % (model_type, absa_type, task_name, tfm_mode)
     if fix_tfm:
