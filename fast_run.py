@@ -1,6 +1,6 @@
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "3, 1, 2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0, 1"
 
 #seed_numbers = [42, 593, 1774, 65336, 189990]
 seed_numbers = [42]
