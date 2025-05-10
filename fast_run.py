@@ -5,18 +5,13 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0, 1"
 #seed_numbers = [42, 593, 1774, 65336, 189990]
 seed_numbers = [42]
 model_type = 'bert'
-absa_type = 'tfm'
+absa_type = 'bilstm_cnn'
 tfm_mode = 'finetune' #only support finetune
-fix_tfm = 1
+fix_tfm = 1 # 1->freeze->featured-based approach >< 0 = finetuning
 task_name = 'rest14'
 warmup_steps = 0 # no warmup
 overfit = 0 # no overfit check
-if task_name == 'laptop14':
-    train_batch_size = 32
-elif task_name == 'rest14':
-    train_batch_size = 16
-else:
-    raise Exception("Unsupported dataset %s!!!" % task_name)
+train_batch_size = 16
 
 for run_id, seed in enumerate(seed_numbers):
     command = "python main.py --model_type %s --absa_type %s --tfm_mode %s --fix_tfm %s " \

@@ -15,6 +15,56 @@ class TaggerConfig:
         self.bidirectional = True  # not used if tagger is non-RNN model
 
 
+class BiLSTM_CNN(nn.Module):
+    def __init__(self, input_size, hidden_size, cnn_kernels=[3, 5, 7], bidirectional=True):
+        super(BiLSTM_CNN, self).__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size // 2 if bidirectional else hidden_size
+        self.bidirectional = bidirectional
+
+        # BiLSTM layer
+        self.lstm = nn.LSTM(
+            input_size=input_size,
+            hidden_size=self.hidden_size,
+            num_layers=1,
+            bidirectional=bidirectional,
+            batch_first=True
+        )
+
+        # CNN layers with different kernel sizes
+        self.convs = nn.ModuleList([
+            nn.Conv1d(hidden_size, hidden_size // len(cnn_kernels), k, padding=k // 2)
+            for k in cnn_kernels
+        ])
+
+        # Layer normalization
+        self.layer_norm = nn.LayerNorm(hidden_size)
+
+    def forward(self, x):
+        # BiLSTM processing
+        lstm_output, _ = self.lstm(x)  # shape: (batch_size, seq_len, hidden_size)
+
+        # CNN processing
+        # Transpose for CNN: (batch_size, seq_len, hidden_size) -> (batch_size, hidden_size, seq_len)
+        cnn_input = lstm_output.transpose(1, 2)
+
+        # Apply multiple CNNs with different kernel sizes
+        conv_outputs = []
+        for conv in self.convs:
+            conv_output = conv(cnn_input)  # shape: (batch_size, hidden_size//len(kernels), seq_len)
+            conv_outputs.append(conv_output)
+
+        # Concatenate outputs from different CNNs
+        combined = torch.cat(conv_outputs, dim=1)  # shape: (batch_size, hidden_size, seq_len)
+
+        # Transpose back: (batch_size, hidden_size, seq_len) -> (batch_size, seq_len, hidden_size)
+        output = combined.transpose(1, 2)
+
+        # Apply layer normalization
+        output = self.layer_norm(output)
+
+        return output, None
+
 class GRU(nn.Module):
     # customized GRU with layer normalization
     def __init__(self, input_size, hidden_size, bidirectional=True):
@@ -107,7 +157,7 @@ class BertABSATagger(BertPreTrainedModel):
 
         self.tagger = None
         if self.tagger_config.absa_type == 'linear':
-            # hidden size at the penultimate layer
+            # hidden size at the penultimate layer (2-before last layer)
             penultimate_hidden_size = bert_config.hidden_size
         else:
             self.tagger_dropout = nn.Dropout(self.tagger_config.hidden_dropout_prob)
@@ -121,6 +171,11 @@ class BertABSATagger(BertPreTrainedModel):
                                                          nhead=12,
                                                          dim_feedforward=4*bert_config.hidden_size,
                                                          dropout=0.1)
+            elif self.tagger_config.absa_type == 'bilstm_cnn':
+                # BiLSTM-CNN layer
+                self.tagger = BiLSTM_CNN(input_size=bert_config.hidden_size,
+                                         hidden_size=self.tagger_config.hidden_size,
+                                         bidirectional=self.tagger_config.bidirectional)
             else:
                 raise Exception('Unimplemented downstream tagger %s...' % self.tagger_config.absa_type)
             penultimate_hidden_size = self.tagger_config.hidden_size
@@ -129,7 +184,7 @@ class BertABSATagger(BertPreTrainedModel):
     def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None,
                 position_ids=None, head_mask=None):
         outputs = self.bert(input_ids, position_ids=position_ids, token_type_ids=token_type_ids,
-                            attention_mask=attention_mask, head_mask=head_mask)
+                            attention_mask=attention_mask, head_mask=head_mask) # BERT embedding
         # the hidden states of the last Bert Layer, shape: (bsz, seq_len, hsz)
         tagger_input = outputs[0]
         tagger_input = self.bert_dropout(tagger_input)
@@ -147,6 +202,9 @@ class BertABSATagger(BertPreTrainedModel):
                 tagger_input = tagger_input.transpose(0, 1)
                 classifier_input = self.tagger(tagger_input)
                 classifier_input = classifier_input.transpose(0, 1)
+            elif self.tagger_config.absa_type == 'bilstm_cnn':
+                # BiLSTM-CNN
+                classifier_input, _ = self.tagger(tagger_input)
             else:
                 raise Exception("Unimplemented downstream tagger %s..." % self.tagger_config.absa_type)
             classifier_input = self.tagger_dropout(classifier_input)

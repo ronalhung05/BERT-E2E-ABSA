@@ -131,7 +131,7 @@ def train(args, train_dataset, model, tokenizer):
     train_sampler = RandomSampler(train_dataset)
     train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=args.train_batch_size)
 
-    if args.max_steps > 0:
+    if args.max_steps > 0: # defined steps
         t_total = args.max_steps
         args.num_train_epochs = args.max_steps // (len(train_dataloader) // args.gradient_accumulation_steps) + 1
     else:
@@ -157,45 +157,45 @@ def train(args, train_dataset, model, tokenizer):
     logger.info("  Gradient Accumulation steps = %d", args.gradient_accumulation_steps)
     logger.info("  Total optimization steps = %d", t_total)
 
-    global_step = 0
-    tr_loss, logging_loss = 0.0, 0.0
-    model.zero_grad()
-    train_iterator = trange(int(args.num_train_epochs), desc="Epoch")
+    global_step = 0 # counter for optimzer.step()
+    tr_loss, logging_loss = 0.0, 0.0 # tr -> total loss - logging_loss -> most recent tr_loss
+    model.zero_grad() # remove all gradients -> ensure new training
+    train_iterator = trange(int(args.num_train_epochs), desc="Epoch") # iterator with progress bar
     # set the seed number
     set_seed(args)  # Added here for reproductibility (even between python 2 and 3)
-    for _ in train_iterator:
+    for _ in train_iterator: # iterate EPOCH
         epoch_iterator = tqdm(train_dataloader, desc="Iteration")
-        for step, batch in enumerate(epoch_iterator):
+        for step, batch in enumerate(epoch_iterator):  # iterate BATCH
             model.train()
-            batch = tuple(t.to(args.device) for t in batch)
+            batch = tuple(t.to(args.device) for t in batch) # move data to device
             inputs = {'input_ids':      batch[0],
                       'attention_mask': batch[1],
-                      'token_type_ids': batch[2] if args.model_type in ['bert'] else None,  # XLM don't use segment_ids
-                      'labels':         batch[3]}
-            ouputs = model(**inputs)
+                      'token_type_ids': batch[2],
+                      'labels':         batch[3]} # input
+            ouputs = model(**inputs) # output
             # loss with attention mask
             loss = ouputs[0]  # model outputs are always tuple in pytorch-transformers (see doc)
 
             if args.n_gpu > 1:
                 loss = loss.mean()  # mean() to average on multi-gpu parallel training
-            if args.gradient_accumulation_steps > 1:
+            if args.gradient_accumulation_steps > 1: # perform multiple forward and backward passes over several batches before updating weights
                 loss = loss / args.gradient_accumulation_steps
 
 
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm) # clipping to avoid exploding gradient
 
             tr_loss += loss.item()
-            if (step + 1) % args.gradient_accumulation_steps == 0:
+            if (step + 1) % args.gradient_accumulation_steps == 0: # update parameters after each gradient acc steps
                 optimizer.step()
                 scheduler.step()  # Update learning rate schedule
                 model.zero_grad()
                 global_step += 1
-
+                # Eval and logging
                 if args.logging_steps > 0 and global_step % args.logging_steps == 0:
                     # Log metrics
                     if args.evaluate_during_training:  # Only evaluate when single GPU otherwise metrics may not average well
-                        results = evaluate(args, model, tokenizer)
+                        results = evaluate(args, model, tokenizer) # evaluate
                         for key, value in results.items():
                             tb_writer.add_scalar('eval_{}'.format(key), value, global_step)
                     tb_writer.add_scalar('lr', scheduler.get_lr()[0], global_step)
@@ -211,7 +211,7 @@ def train(args, train_dataset, model, tokenizer):
                     model_to_save.save_pretrained(output_dir)
                     torch.save(args, os.path.join(output_dir, 'training_args.bin'))
                     logger.info("Saving model checkpoint to %s", output_dir)
-
+            # Stop when
             if args.max_steps > 0 and global_step > args.max_steps:
                 epoch_iterator.close()
                 break
@@ -322,7 +322,7 @@ def load_and_cache_examples(args, task, tokenizer, mode='train'):
     all_segment_ids = torch.tensor([f.segment_ids for f in features], dtype=torch.long)
 
     all_label_ids = torch.tensor([f.label_ids for f in features], dtype=torch.long)
-    # used in evaluation
+    # used in evaluation -> each element in list stores the indices of all first tokens
     all_evaluate_label_ids = [f.evaluate_label_ids for f in features]
     dataset = TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_label_ids)
     return dataset, all_evaluate_label_ids
