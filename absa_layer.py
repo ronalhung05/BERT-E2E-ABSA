@@ -15,51 +15,51 @@ class TaggerConfig:
         self.bidirectional = True  # not used if tagger is non-RNN model
 
 
-class BiGRU_CNN(nn.Module):
+class CNN_BiGRU(nn.Module):
     def __init__(self, input_size, hidden_size, cnn_kernels=[3, 5, 7], bidirectional=True):
-        super(BiGRU_CNN, self).__init__()
+        super(CNN_BiGRU, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size // 2 if bidirectional else hidden_size
         self.bidirectional = bidirectional
 
-        # Tận dụng lớp GRU hiện có
+        # CNN layers with different kernel sizes
+        self.convs = nn.ModuleList([
+            nn.Conv1d(input_size, input_size // len(cnn_kernels), k, padding=k // 2)
+            for k in cnn_kernels
+        ])
+
+        # GRU layer comes after CNN
         self.gru = GRU(
-            input_size=input_size,
+            input_size=input_size,  # Input size remains the same after concatenation
             hidden_size=hidden_size,
             bidirectional=bidirectional
         )
-
-        # CNN layers with different kernel sizes
-        self.convs = nn.ModuleList([
-            nn.Conv1d(hidden_size, hidden_size // len(cnn_kernels), k, padding=k // 2)
-            for k in cnn_kernels
-        ])
 
         # Layer normalization
         self.layer_norm = nn.LayerNorm(hidden_size)
 
     def forward(self, x):
-        # BiGRU processing
-        gru_out, _ = self.gru(x)  # shape: (batch_size, seq_len, hidden_size)
-
-        # CNN processing
-        # Transpose for CNN: (batch_size, seq_len, hidden_size) -> (batch_size, hidden_size, seq_len)
-        cnn_in = gru_out.transpose(1, 2)
+        # CNN processing first
+        # Transpose for CNN: (batch_size, seq_len, input_size) -> (batch_size, input_size, seq_len)
+        cnn_in = x.transpose(1, 2)
 
         # Apply multiple CNNs with different kernel sizes
         conv_outputs = []
         for conv in self.convs:
-            conv_out = conv(cnn_in)  # shape: (batch_size, hidden_size//len(kernels), seq_len)
+            conv_out = conv(cnn_in)  # shape: (batch_size, input_size//len(kernels), seq_len)
             conv_outputs.append(conv_out)
 
         # Concatenate outputs from different CNNs
-        combined = torch.cat(conv_outputs, dim=1)  # shape: (batch_size, hidden_size, seq_len)
+        combined = torch.cat(conv_outputs, dim=1)  # shape: (batch_size, input_size, seq_len)
 
-        # Transpose back: (batch_size, hidden_size, seq_len) -> (batch_size, seq_len, hidden_size)
-        combined = combined.transpose(1, 2)
+        # Transpose back: (batch_size, input_size, seq_len) -> (batch_size, seq_len, input_size)
+        cnn_out = combined.transpose(1, 2)
+
+        # BiGRU processing
+        gru_out, _ = self.gru(cnn_out)  # shape: (batch_size, seq_len, hidden_size)
 
         # Apply layer normalization
-        output = self.layer_norm(combined)
+        output = self.layer_norm(gru_out)
 
         return output, None
 
@@ -171,7 +171,7 @@ class BertABSATagger(BertPreTrainedModel):
                                                          dropout=0.1)
             elif self.tagger_config.absa_type == 'bigru_cnn_attn':
                 # BiGRU-CNN-Attention layer
-                self.tagger = BiGRU_CNN(input_size=bert_config.hidden_size,
+                self.tagger = CNN_BiGRU(input_size=bert_config.hidden_size,
                                                    hidden_size=self.tagger_config.hidden_size,
                                                    bidirectional=self.tagger_config.bidirectional)
             else:
