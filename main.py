@@ -280,7 +280,7 @@ def evaluate(args, model, tokenizer, mode, prefix=""):
                 crf_mask.append(batch[1])
             nb_eval_steps += 1
             if preds is None:
-                preds = logits.detach().cpu().numpy()
+                preds = logits.detach().cpu().numpy() # detach -> don't compute gradient -> cpu to convert numpy while gpu can't
                 out_label_ids = inputs['labels'].detach().cpu().numpy()
             else:
                 preds = np.append(preds, logits.detach().cpu().numpy(), axis=0)

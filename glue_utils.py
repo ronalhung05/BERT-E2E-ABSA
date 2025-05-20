@@ -442,12 +442,12 @@ def compute_metrics_absa(preds, labels, all_evaluate_label_ids, tagging_schema):
     n_samples = len(all_evaluate_label_ids)
     pred_y, gold_y = [], []
     class_count = np.zeros(3)
-    for i in range(n_samples):
+    for i in range(n_samples): # Token to words alligment
         evaluate_label_ids = all_evaluate_label_ids[i]
         pred_labels = preds[i][evaluate_label_ids]
         gold_labels = labels[i][evaluate_label_ids]
         assert len(pred_labels) == len(gold_labels)
-        # here, no EQ tag will be induced
+        # here, no EQ tag will be induced -> convert id to tag strings
         pred_tags = [absa_id2tag[label] for label in pred_labels]
         gold_tags = [absa_id2tag[label] for label in gold_labels]
 
@@ -460,10 +460,10 @@ def compute_metrics_absa(preds, labels, all_evaluate_label_ids, tagging_schema):
         else:
             # current tagging schema is BIEOS, do nothing
             pass
-        g_ts_sequence, p_ts_sequence = tag2ts(ts_tag_sequence=gold_tags), tag2ts(ts_tag_sequence=pred_tags)
+        g_ts_sequence, p_ts_sequence = tag2ts(ts_tag_sequence=gold_tags), tag2ts(ts_tag_sequence=pred_tags) # convert to tuple (b,e,p)
 
         hit_ts_count, gold_ts_count, pred_ts_count = match_ts(gold_ts_sequence=g_ts_sequence,
-                                                              pred_ts_sequence=p_ts_sequence)
+                                                              pred_ts_sequence=p_ts_sequence) # matching
         n_tp_ts += hit_ts_count
         n_gold_ts += gold_ts_count
         n_pred_ts += pred_ts_count

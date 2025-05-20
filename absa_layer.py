@@ -15,9 +15,9 @@ class TaggerConfig:
         self.bidirectional = True  # not used if tagger is non-RNN model
 
 
-class BiGRU_CNN_Attention(nn.Module):
+class BiGRU_CNN(nn.Module):
     def __init__(self, input_size, hidden_size, cnn_kernels=[3, 5, 7], bidirectional=True):
-        super(BiGRU_CNN_Attention, self).__init__()
+        super(BiGRU_CNN, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size // 2 if bidirectional else hidden_size
         self.bidirectional = bidirectional
@@ -34,9 +34,6 @@ class BiGRU_CNN_Attention(nn.Module):
             nn.Conv1d(hidden_size, hidden_size // len(cnn_kernels), k, padding=k // 2)
             for k in cnn_kernels
         ])
-
-        # Attention mechanism
-        self.attention = nn.Linear(hidden_size, 1)
 
         # Layer normalization
         self.layer_norm = nn.LayerNorm(hidden_size)
@@ -61,12 +58,8 @@ class BiGRU_CNN_Attention(nn.Module):
         # Transpose back: (batch_size, hidden_size, seq_len) -> (batch_size, seq_len, hidden_size)
         combined = combined.transpose(1, 2)
 
-        # Apply attention mechanism
-        attn_weights = torch.softmax(self.attention(combined), dim=1)
-        context = attn_weights * combined
-
         # Apply layer normalization
-        output = self.layer_norm(context)
+        output = self.layer_norm(combined)
 
         return output, None
 
@@ -78,7 +71,7 @@ class GRU(nn.Module):
         :param hidden_size:
         :param bidirectional:
         """
-        super(GRU, self).__init__()
+        super(GRU, self).__init__() # calling parent class -> ensure entire inheritance chain
         self.input_size = input_size
         if bidirectional:
             self.hidden_size = hidden_size // 2
@@ -177,8 +170,8 @@ class BertABSATagger(BertPreTrainedModel):
                                                          dim_feedforward=4*bert_config.hidden_size,
                                                          dropout=0.1)
             elif self.tagger_config.absa_type == 'bigru_cnn_attn':
-                # BiLSTM-CNN-Attention layer
-                self.tagger = BiGRU_CNN_Attention(input_size=bert_config.hidden_size,
+                # BiGRU-CNN-Attention layer
+                self.tagger = BiGRU_CNN(input_size=bert_config.hidden_size,
                                                    hidden_size=self.tagger_config.hidden_size,
                                                    bidirectional=self.tagger_config.bidirectional)
             else:
