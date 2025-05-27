@@ -2,10 +2,10 @@ import os
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0, 1"
 
-#seed_numbers = [42, 593, 1774, 65336, 189990]
-seed_numbers = [42]
+seed_numbers = [42, 593, 1774, 65336, 189990]
+# seed_numbers = [42]
 model_type = 'bert'
-absa_type = 'bigru_cnn_attn'
+absa_type = 'cnn_bigru'
 tfm_mode = 'finetune'
 fix_tfm = 0
 task_name = 'rest14'
@@ -27,7 +27,7 @@ for run_id, seed in enumerate(seed_numbers):
               "--overwrite_output_dir --eval_all_checkpoints --MASTER_ADDR localhost --MASTER_PORT 28512" % (
         model_type, absa_type, tfm_mode, fix_tfm, task_name, task_name, train_batch_size, warmup_steps, seed, overfit)
     output_dir = '%s-%s-%s-%s' % (model_type, absa_type, task_name, tfm_mode)
-    if fix_tfm:
+    if fix_tfm: # no finetune
         output_dir = '%s-fix' % output_dir
     if overfit:
         output_dir = '%s-overfit' % output_dir

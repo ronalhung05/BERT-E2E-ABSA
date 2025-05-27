@@ -169,8 +169,8 @@ class BertABSATagger(BertPreTrainedModel):
                                                          nhead=12,
                                                          dim_feedforward=4*bert_config.hidden_size,
                                                          dropout=0.1)
-            elif self.tagger_config.absa_type == 'bigru_cnn_attn':
-                # BiGRU-CNN-Attention layer
+            elif self.tagger_config.absa_type == 'cnn_bigru':
+                # CNN-biGRU
                 self.tagger = CNN_BiGRU(input_size=bert_config.hidden_size,
                                                    hidden_size=self.tagger_config.hidden_size,
                                                    bidirectional=self.tagger_config.bidirectional)
@@ -200,8 +200,8 @@ class BertABSATagger(BertPreTrainedModel):
                 tagger_input = tagger_input.transpose(0, 1)
                 classifier_input = self.tagger(tagger_input)
                 classifier_input = classifier_input.transpose(0, 1)
-            elif self.tagger_config.absa_type == 'bigru_cnn_attn':
-                # BiGRU_CNN_Attention
+            elif self.tagger_config.absa_type == 'cnn_bigru':
+                # CNN_BiGRU
                 classifier_input, _ = self.tagger(tagger_input)
             else:
                 raise Exception("Unimplemented downstream tagger %s..." % self.tagger_config.absa_type)

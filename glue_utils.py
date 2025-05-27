@@ -152,7 +152,7 @@ class ABSAProcessor(DataProcessor):
                         class_count[1] += 1
                     if s == 'NEU':
                         class_count[2] += 1
-                examples.append(InputExample(guid=guid, text_a=text_a, text_b=None, label=tags))
+                examples.append(InputExample(guid=guid, text_a=text_a, text_b=None, label=tags)) # Single Sequence Task -> b -> Pair
                 sample_id += 1
         print("%s class count: %s" % (set_type, class_count))
         return examples
@@ -182,15 +182,15 @@ def convert_examples_to_seq_features(examples, label_list, tokenizer,
                                      mask_padding_with_zero=True):
     # feature extraction for sequence labeling
     label_map = {label: i for i, label in enumerate(label_list)}
-    features = []
+    features = [] # each examples
     max_seq_length = -1
     examples_tokenized = []
     for (ex_index, example) in enumerate(examples):
-        tokens_a = []
-        labels_a = []
-        evaluate_label_ids = []
+        tokens_a = [] #tokenized text_a list
+        labels_a = [] #list of label of each token
+        evaluate_label_ids = [] #eval -> store index of first subword of token
         words = example.text_a.split(' ')
-        wid, tid = 0, 0
+        wid, tid = 0, 0 #word id orgin, how many token id for word
         for word, label in zip(words, example.label):
             subwords = tokenizer.tokenize(word)
             tokens_a.extend(subwords)
@@ -205,7 +205,7 @@ def convert_examples_to_seq_features(examples, label_list, tokenizer,
         #print(evaluate_label_ids)
         assert tid == len(tokens_a)
         evaluate_label_ids = np.array(evaluate_label_ids, dtype=np.int32)
-        examples_tokenized.append((tokens_a, labels_a, evaluate_label_ids))
+        examples_tokenized.append((tokens_a, labels_a, evaluate_label_ids)) # list of tokenized examples
         if len(tokens_a) > max_seq_length:
             max_seq_length = len(tokens_a)
     # count on the [CLS] and [SEP]
@@ -219,10 +219,10 @@ def convert_examples_to_seq_features(examples, label_list, tokenizer,
         #if len(tokens_a) > max_seq_length - 2:
         #    tokens_a = tokens_a[:(max_seq_length - 2)]
         #    labels_a = labels_a
-        tokens = tokens_a + [sep_token]
-        segment_ids = [sequence_a_segment_id] * len(tokens)
-        labels = labels_a + ['O']
-        if cls_token_at_end:
+        tokens = tokens_a + [sep_token] # [sep]
+        segment_ids = [sequence_a_segment_id] * len(tokens) # id for each sentence -> word in sentence == id
+        labels = labels_a + ['O'] # O for [SEP]
+        if cls_token_at_end: # true
             # evaluate label ids not change
             tokens = tokens + [cls_token]
             segment_ids = segment_ids + [cls_token_segment_id]
@@ -233,8 +233,8 @@ def convert_examples_to_seq_features(examples, label_list, tokenizer,
             segment_ids = [cls_token_segment_id] + segment_ids
             labels = ['O'] + labels
             evaluate_label_ids += 1
-        input_ids = tokenizer.convert_tokens_to_ids(tokens)
-        input_mask = [1 if mask_padding_with_zero else 0] * len(input_ids)
+        input_ids = tokenizer.convert_tokens_to_ids(tokens) # text -> numeric -> train
+        input_mask = [1 if mask_padding_with_zero else 0] * len(input_ids) # two sentences may differ -> same length
         # Zero-pad up to the sequence length.
         padding_length = max_seq_length - len(input_ids)
         #print("Current labels:", labels)
@@ -261,7 +261,7 @@ def convert_examples_to_seq_features(examples, label_list, tokenizer,
         assert len(segment_ids) == max_seq_length
         assert len(label_ids) == max_seq_length
 
-        if ex_index < 5:
+        if ex_index < 5: # logging 5 first examples
             logger.info("*** Example ***")
             logger.info("guid: %s" % (example.guid))
             logger.info("tokens: %s" % " ".join(
