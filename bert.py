@@ -42,15 +42,15 @@ class BertPreTrainedModel(PreTrainedModel):
     def __init__(self, *inputs, **kwargs):
         super(BertPreTrainedModel, self).__init__(*inputs, **kwargs)
 
-    def init_weights(self, module):
+    def init_weights(self, module): # call when model instantiation that don't have pretrained weights from from_pretrained()
         """ Initialize the weights.
         """
         if isinstance(module, (nn.Linear, nn.Embedding)):
             # Slightly different from the TF version which uses truncated_normal for initialization
             # cf https://github.com/pytorch/pytorch/pull/5617
-            module.weight.data.normal_(mean=0.0, std=self.config.initializer_range)
+            module.weight.data.normal_(mean=0.0, std=self.config.initializer_range) #normal distribution with mean=0 and standard deviation
         elif isinstance(module, BertLayerNorm):
-            module.bias.data.zero_()
-            module.weight.data.fill_(1.0)
-        if isinstance(module, nn.Linear) and module.bias is not None:
+            module.bias.data.zero_() #bias = 0
+            module.weight.data.fill_(1.0) #weight = 1
+        if isinstance(module, nn.Linear) and module.bias is not None: #linear layer with bias set to 0 -> prevent initial bias
             module.bias.data.zero_()

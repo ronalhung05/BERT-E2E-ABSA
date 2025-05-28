@@ -10,8 +10,8 @@ class TaggerConfig:
     # define hyper parameters
     def __init__(self):
         self.hidden_dropout_prob = 0.1 # drop out = 0.1
-        self.hidden_size = 768 # size
-        self.n_rnn_layers = 1  # not used if tagger is non-RNN model
+        self.hidden_size = 768 # size of BERT output
+        self.n_rnn_layers = 1  # number of RNN layers - not used if tagger is non-RNN model
         self.bidirectional = True  # not used if tagger is non-RNN model
 
 
@@ -136,7 +136,7 @@ class BertABSATagger(BertPreTrainedModel):
         """
         :param bert_config: configuration for bert model
         """
-        super(BertABSATagger, self).__init__(bert_config)
+        super(BertABSATagger, self).__init__(bert_config) # call the parent BERT Pretrained Model
         self.num_labels = bert_config.num_labels # number of labels
         self.tagger_config = TaggerConfig()
         self.tagger_config.absa_type = bert_config.absa_type.lower()
@@ -183,8 +183,8 @@ class BertABSATagger(BertPreTrainedModel):
                 position_ids=None, head_mask=None):
         outputs = self.bert(input_ids, position_ids=position_ids, token_type_ids=token_type_ids,
                             attention_mask=attention_mask, head_mask=head_mask)
-        # the hidden states of the last Bert Layer, shape: (bsz, seq_len, hsz)
-        tagger_input = outputs[0]
+        # the hidden states of the last Bert Layer, shape: (bsz, seq_len, hsz) batchsize - seqlen - hiddensize
+        tagger_input = outputs[0] # outputs -> BaseModelOutputWithPoolingAndCrossAttentions object -> index 0 = last_hidden_state
         tagger_input = self.bert_dropout(tagger_input)
         #print("tagger_input.shape:", tagger_input.shape)
         if self.tagger is None or self.tagger_config.absa_type == 'crf':

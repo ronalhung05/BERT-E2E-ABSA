@@ -29,7 +29,7 @@ ALL_MODELS = (
 MODEL_CLASSES = {
     'bert': (BertConfig, BertABSATagger, BertTokenizer)
 }
-
+# BERTABSATagger -> model class implements ABSA functionality
 
 def set_seed(args):
     random.seed(args.seed)
@@ -401,7 +401,7 @@ def main():
 
     # initialize the pre-trained model
     args.model_type = args.model_type.lower()
-    config_class, model_class, tokenizer_class = MODEL_CLASSES[args.model_type]
+    config_class, model_class, tokenizer_class = MODEL_CLASSES[args.model_type] # assign config, model and tokenizer
     config = config_class.from_pretrained(args.config_name if args.config_name else args.model_name_or_path,
                                           num_labels=num_labels, finetuning_task=args.task_name, cache_dir="./cache")
     tokenizer = tokenizer_class.from_pretrained(args.tokenizer_name if args.tokenizer_name else args.model_name_or_path,
