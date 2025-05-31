@@ -184,7 +184,7 @@ class BertABSATagger(BertPreTrainedModel):
         outputs = self.bert(input_ids, position_ids=position_ids, token_type_ids=token_type_ids,
                             attention_mask=attention_mask, head_mask=head_mask)
         # the hidden states of the last Bert Layer, shape: (bsz, seq_len, hsz) batchsize - seqlen - hiddensize
-        tagger_input = outputs[0] # outputs -> BaseModelOutputWithPoolingAndCrossAttentions object -> index 0 = last_hidden_state
+        tagger_input = outputs[0] # outputs -> BaseModelOutput object -> index 0 = last_hidden_state
         tagger_input = self.bert_dropout(tagger_input)
         #print("tagger_input.shape:", tagger_input.shape)
         if self.tagger is None or self.tagger_config.absa_type == 'crf':
@@ -206,22 +206,22 @@ class BertABSATagger(BertPreTrainedModel):
             else:
                 raise Exception("Unimplemented downstream tagger %s..." % self.tagger_config.absa_type)
             classifier_input = self.tagger_dropout(classifier_input)
-            logits = self.classifier(classifier_input)
+            logits = self.classifier(classifier_input) #scores for each token with each label percentage
         outputs = (logits,) + outputs[2:]
 
-        if labels is not None:
+        if labels is not None: # loss for ground truth labels - training process
             if self.tagger_config.absa_type != 'crf':
-                loss_fct = CrossEntropyLoss()
-                if attention_mask is not None:
+                loss_fct = CrossEntropyLoss() # softmax + neg log
+                if attention_mask is not None: # only loss for real tokens and ignore padding tokens
                     active_loss = attention_mask.view(-1) == 1
-                    active_logits = logits.view(-1, self.num_labels)[active_loss]
-                    active_labels = labels.view(-1)[active_loss]
+                    active_logits = logits.view(-1, self.num_labels)[active_loss] # logit of real tokens
+                    active_labels = labels.view(-1)[active_loss] # label
                     loss = loss_fct(active_logits, active_labels)
                 else:
                     loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
                 outputs = (loss,) + outputs
             else:
                 log_likelihood = self.tagger(inputs=logits, tags=labels, mask=attention_mask)
-                loss = -log_likelihood
+                loss = -log_likelihood # negative log likelihood
                 outputs = (loss,) + outputs
         return outputs
