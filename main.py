@@ -299,14 +299,14 @@ def evaluate(args, model, tokenizer, mode, prefix=""):
         result['eval_loss'] = eval_loss
         results.update(result)
 
-        output_eval_file = os.path.join(eval_output_dir, "%s_results.txt" % mode)
-        with open(output_eval_file, "w") as writer:
-            #logger.info("***** %s results *****" % mode)
-            for key in sorted(result.keys()):
-                if 'eval_loss' in key:
-                    logger.info("  %s = %s", key, str(result[key]))
-                writer.write("%s = %s\n" % (key, str(result[key])))
-            #logger.info("***** %s results *****" % mode)
+        # output_eval_file = os.path.join(eval_output_dir, "%s_results.txt" % mode)
+        # with open(output_eval_file, "w") as writer:
+        #     #logger.info("***** %s results *****" % mode)
+        #     for key in sorted(result.keys()):
+        #         if 'eval_loss' in key:
+        #             logger.info("  %s = %s", key, str(result[key]))
+        #         writer.write("%s = %s\n" % (key, str(result[key])))
+        #     #logger.info("***** %s results *****" % mode)
 
     return results
 
