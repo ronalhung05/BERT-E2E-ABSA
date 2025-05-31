@@ -492,7 +492,6 @@ def main():
             test_loss_values.append((k, v))
     log_file_path = '%s/log.txt' % args.output_dir
     log_file = open(log_file_path, 'a')
-    log_file.write("\tValidation:\n")
     for (test_f1_k, test_f1_v), (test_loss_k, test_loss_v), (dev_f1_k, dev_f1_v), (dev_loss_k, dev_loss_v) in zip(
             test_f1_values, test_loss_values, dev_f1_values, dev_loss_values):
         global_step = int(test_f1_k.split('_')[-1])
@@ -502,10 +501,8 @@ def main():
                                                                                 test_f1_v, test_loss_k, test_loss_v,
                                                                                 dev_f1_k, dev_f1_v, dev_loss_k,
                                                                                 dev_loss_v))
-        validation_string = '\t\tdev-%s: %.5lf, dev-%s: %.5lf' % (dev_f1_k, dev_f1_v, dev_loss_k, dev_loss_v)
-        log_file.write(validation_string + '\n')
     n_times = args.max_steps // args.save_steps + 1
-    log_file.write("\tDEV:\n")
+    log_file.write("\t**DEV:**\n")
     for i in range(1, n_times):
         step = i * 100
         log_file.write('\tStep %s:\n' % step)
@@ -514,8 +511,8 @@ def main():
         micro_f1 = results['micro-f1_%s' % step]
         macro_f1 = results['macro-f1_%s' % step]
         eval_loss = results['eval_loss_%s' % step]
-        log_file.write('\t\tprecision: %.4lf, recall: %.4lf, micro-f1: %.4lf, macro-f1: %.4lf\n'
-                       % (precision, recall, micro_f1, macro_f1))
+        log_file.write('\t\tprecision: %.4lf, recall: %.4lf, micro-f1: %.4lf, macro-f1: %.4lf, eval_loss: %.4lf\n'
+                       % (precision, recall, micro_f1, macro_f1, eval_loss))
 
     # n_times = args.max_steps // args.save_steps + 1
     log_file.write("\tTEST:\n")
@@ -526,9 +523,9 @@ def main():
         recall = test_results['recall_%s' % step]
         micro_f1 = test_results['micro-f1_%s' % step]
         macro_f1 = test_results['macro-f1_%s' % step]
-        # evaloss =
-        log_file.write('\t\tprecision: %.4lf, recall: %.4lf, micro-f1: %.4lf, macro-f1: %.4lf\n'
-                       % (precision, recall, micro_f1, macro_f1))
+        evaloss = test_results['macro-f1_%s' % step]
+        log_file.write('\t\tprecision: %.4lf, recall: %.4lf, micro-f1: %.4lf, macro-f1: %.4lf, eval_loss: %.4lf\n'
+                       % (precision, recall, micro_f1, macro_f1, eval_loss))
     log_file.write("\tBest checkpoint: %s\n" % best_checkpoint)
     log_file.write('******************************************\n')
     log_file.close()
