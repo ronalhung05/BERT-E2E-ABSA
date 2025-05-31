@@ -523,7 +523,7 @@ def main():
         recall = test_results['recall_%s' % step]
         micro_f1 = test_results['micro-f1_%s' % step]
         macro_f1 = test_results['macro-f1_%s' % step]
-        evaloss = test_results['macro-f1_%s' % step]
+        eval_loss = test_results['macro-f1_%s' % step]
         log_file.write('\t\tprecision: %.4lf, recall: %.4lf, micro-f1: %.4lf, macro-f1: %.4lf, eval_loss: %.4lf\n'
                        % (precision, recall, micro_f1, macro_f1, eval_loss))
     log_file.write("\tBest checkpoint: %s\n" % best_checkpoint)
