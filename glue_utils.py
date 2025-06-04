@@ -184,7 +184,7 @@ def convert_examples_to_seq_features(examples, label_list, tokenizer,
     label_map = {label: i for i, label in enumerate(label_list)}
     features = [] # each examples
     max_seq_length = -1
-    examples_tokenized = []
+    examples_tokenized = [] # BIEOS tag ot2BIEOS
     for (ex_index, example) in enumerate(examples):
         tokens_a = [] #tokenized text_a list
         labels_a = [] #list of label of each token
