@@ -193,7 +193,7 @@ class BertABSATagger(BertPreTrainedModel):
         #print("tagger_input.shape:", tagger_input.shape)
         if self.tagger is None or self.tagger_config.absa_type == 'crf':
             # regard classifier as the tagger
-                logits = self.classifier(tagger_input)
+            logits = self.classifier(tagger_input)
         else:
             if self.tagger_config.absa_type == 'gru':
                 # customized GRU
