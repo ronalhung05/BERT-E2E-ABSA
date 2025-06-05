@@ -74,14 +74,18 @@ class GRU(nn.Module):
         super(GRU, self).__init__() # calling parent class -> ensure entire inheritance chain
         self.input_size = input_size
         if bidirectional:
-            self.hidden_size = hidden_size // 2
+            self.hidden_size = hidden_size // 2 #If bidirectional=True, outputs are of size hiddensize * 2
         else:
             self.hidden_size = hidden_size
         self.bidirectional = bidirectional
+        #transform x(t) and h(t-1) to double size of hidden size -> reset and update gates
         self.Wxrz = nn.Linear(in_features=self.input_size, out_features=2*self.hidden_size, bias=True)
         self.Whrz = nn.Linear(in_features=self.hidden_size, out_features=2*self.hidden_size, bias=True)
+        #candidate state computing
         self.Wxn = nn.Linear(in_features=self.input_size, out_features=self.hidden_size, bias=True)
         self.Whn = nn.Linear(in_features=self.hidden_size, out_features=self.hidden_size, bias=True)
+
+        #Layer norm
         self.LNx1 = nn.LayerNorm(2*self.hidden_size)
         self.LNh1 = nn.LayerNorm(2*self.hidden_size)
         self.LNx2 = nn.LayerNorm(self.hidden_size)
@@ -98,14 +102,14 @@ class GRU(nn.Module):
             :param htm1: previous hidden state
             :return:
             """
-            gates_rz = torch.sigmoid(self.LNx1(self.Wxrz(xt)) + self.LNh1(self.Whrz(htm1)))
-            rt, zt = gates_rz.chunk(2, 1)
-            nt = torch.tanh(self.LNx2(self.Wxn(xt))+rt*self.LNh2(self.Whn(htm1)))
-            ht = (1.0-zt) * nt + zt * htm1
+            gates_rz = torch.sigmoid(self.LNx1(self.Wxrz(xt)) + self.LNh1(self.Whrz(htm1))) # turn input norm(hidden_size*2)
+            rt, zt = gates_rz.chunk(2, 1) #reset gate and update gate
+            nt = torch.tanh(self.LNx2(self.Wxn(xt))+rt*self.LNh2(self.Whn(htm1))) # hidden candidate
+            ht = (1.0-zt) * nt + zt * htm1 # update new hidden state
             return ht
 
-        steps = range(x.size(1))
-        bs = x.size(0)
+        steps = range(x.size(1)) # NUMBER OF TOKENS -> TIMES
+        bs = x.size(0) #BATCH SIZE
         hidden = self.init_hidden(bs)
         # shape: (seq_len, bsz, input_size)
         input = x.transpose(0, 1)
@@ -114,9 +118,9 @@ class GRU(nn.Module):
             hidden = recurrence(input[t], hidden)
             output.append(hidden)
         # shape: (bsz, seq_len, input_size)
-        output = torch.stack(output, 0).transpose(0, 1)
+        output = torch.stack(output, 0).transpose(0, 1) # COMBINE TO BECOME TENSORE
 
-        if self.bidirectional:
+        if self.bidirectional: # REVERSE ORDER
             output_b = []
             hidden_b = self.init_hidden(bs)
             for t in steps[::-1]:
@@ -189,7 +193,7 @@ class BertABSATagger(BertPreTrainedModel):
         #print("tagger_input.shape:", tagger_input.shape)
         if self.tagger is None or self.tagger_config.absa_type == 'crf':
             # regard classifier as the tagger
-            logits = self.classifier(tagger_input)
+                logits = self.classifier(tagger_input)
         else:
             if self.tagger_config.absa_type == 'gru':
                 # customized GRU
@@ -213,11 +217,11 @@ class BertABSATagger(BertPreTrainedModel):
             if self.tagger_config.absa_type != 'crf':
                 loss_fct = CrossEntropyLoss() # softmax + neg log
                 if attention_mask is not None: # only loss for real tokens and ignore padding tokens
-                    active_loss = attention_mask.view(-1) == 1
+                    active_loss = attention_mask.view(-1) == 1 #create mask for real tokens (1) vs padding (0)
                     active_logits = logits.view(-1, self.num_labels)[active_loss] # logit of real tokens
-                    active_labels = labels.view(-1)[active_loss] # label
+                    active_labels = labels.view(-1)[active_loss] # label only for real tokens
                     loss = loss_fct(active_logits, active_labels)
-                else:
+                else: #no masking
                     loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
                 outputs = (loss,) + outputs
             else:
