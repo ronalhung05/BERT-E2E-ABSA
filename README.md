@@ -4,10 +4,10 @@ Exploiting **BERT** **E**nd-**t**o-**E**nd **A**spect-**B**ased **S**entiment **
     <img src="architecture.jpg" height="400"/>
 </p>
 
-# Objective 
+## Objective 
 - In this project, we aim to extract pairs (aspect, polarity) from sentences **(focus on sentence-level ABSA not entire document)**
 - The input may like this "The food is great but the service is bad." -> Output format = [(food,POS) ; (service,NEG)]
-- The project idea and code is based on author Li, Xin "Exploting BERT for End-to-End ABSA",** we have updated the code by introducing the CNN-GRU layer on top of BERT architecture to get better result**
+- **We have updated the code by introducing the CNN-GRU layer on top of BERT architecture to get better result**
   
 ## Architecture
 * Pre-trained embedding layer: BERT-Base-Uncased (12-layer, 768-hidden, 12-heads, 110M parameters)
