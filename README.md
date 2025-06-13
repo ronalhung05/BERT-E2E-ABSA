@@ -14,9 +14,8 @@ Exploiting **BERT** **E**nd-**t**o-**E**nd **A**spect-**B**ased **S**entiment **
 * Task-specific layer: 
   - Linear
   - Recurrent Neural Networks (GRU)
-  - Self-Attention Networks (SAN, TFM)
-  - Conditional Random Fields (CRF)
-
+  - Self-Attention Networks (TFM)
+  - CNN + GRU 
 ## Dataset
 - Rest14 - semeval2014 task 4
 
@@ -27,7 +26,7 @@ Exploiting **BERT** **E**nd-**t**o-**E**nd **A**spect-**B**ased **S**entiment **
 * Kaggle - GPU-P-100 
 
 ## Result
-- Micro-f1 results are the score for bench mark
+- Micro-f1, precision, recall and macro-f1 were used to evaluate, the ** micro-f1** is the one we prioritize
 
 ## Citation
 The idea and code is reference from the paper:
